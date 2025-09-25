@@ -255,9 +255,9 @@
 				DEVELOPMENT_TEAM = K9T8C843PM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "カメラを使用します";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声を使用します";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "写真を追加します";
+				INFOPLIST_KEY_NSCameraUsageDescription = "動画撮影機能を実施するためにカメラを使用します";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "動画撮影機能を実施するために音声を使用します";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "撮影した画像を写真を追加します";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -291,9 +291,9 @@
 				DEVELOPMENT_TEAM = K9T8C843PM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "カメラを使用します";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声を使用します";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "写真を追加します";
+				INFOPLIST_KEY_NSCameraUsageDescription = "動画撮影機能を実施するためにカメラを使用します";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "動画撮影機能を実施するために音声を使用します";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "撮影した画像を写真を追加します";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
