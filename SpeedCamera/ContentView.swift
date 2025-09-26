@@ -120,6 +120,8 @@ struct ContentView: View {
     @State private var isHidden = false // Hideボタン用
     @State private var shutterSoundEnabled = true // シャッター音設定（デフォルト：オン）
     @State private var showSettings = false // 設定画面表示
+    @State private var secretTapCount = 0 // 隠し機能用タップカウント
+    @State private var showSecretFeature = false // 隠し機能表示フラグ
     @State private var flashMode: FlashMode = .off // フラッシュモード
     @State private var zoomFactor: CGFloat = 1.0 // ズーム倍率
     @State private var showGridLines = false // グリッドライン表示
@@ -140,6 +142,12 @@ struct ContentView: View {
                 endPoint: .bottom
             )
             .edgesIgnoringSafeArea(.all)
+            .onAppear {
+                // アプリ起動時に隠し機能をリセット
+                showSecretFeature = false
+                isHidden = false
+                shutterSoundEnabled = true
+            }
 
             // カメラプレビューは常に表示、透明化でhide対応
             ZStack {
@@ -536,36 +544,38 @@ struct ContentView: View {
                     .shadow(radius: 10)
             }
 
-            // Hideボタン（常に表示）
+            // Hideボタン（隠し機能でのみ表示）
+            if showSecretFeature {
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
                     Button(action: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             isHidden.toggle()
                         }
                     }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: isHidden ? "eye.fill" : "eye.slash.fill")
-                                .font(.system(size: 16, weight: .semibold))
+                            HStack(spacing: 6) {
+                                Image(systemName: isHidden ? "eye.fill" : "eye.slash.fill")
+                                    .font(.system(size: 14, weight: .semibold))
                         Text(isHidden ? "Show" : "Hide")
-                                .font(.system(size: 16, weight: .semibold))
-                        }
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
                             .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(
-                            Capsule()
-                                .fill(Color.black.opacity(0.6))
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                                )
-                        )
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(Color.black.opacity(0.6))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.orange.opacity(0.5), lineWidth: 1)
+                                    )
+                            )
+                            .shadow(color: .orange.opacity(0.3), radius: 6, x: 0, y: 3)
                     }
                     .padding()
+                }
                 }
             }
             
@@ -604,7 +614,10 @@ struct ContentView: View {
                     showGridLines: $showGridLines,
                     currentFilter: $currentFilter,
                     photoResolution: $photoResolution,
-                    showWatermark: $showWatermark
+                    showWatermark: $showWatermark,
+                    showSecretFeature: $showSecretFeature,
+                    secretTapCount: $secretTapCount,
+                    isHidden: $isHidden
                 )
                 .transition(.asymmetric(
                     insertion: .move(edge: .bottom).combined(with: .opacity),
@@ -693,6 +706,9 @@ struct SettingsView: View {
     @Binding var currentFilter: CameraFilter
     @Binding var photoResolution: PhotoResolution
     @Binding var showWatermark: Bool
+    @Binding var showSecretFeature: Bool
+    @Binding var secretTapCount: Int
+    @Binding var isHidden: Bool
     
     var body: some View {
         ZStack {
@@ -708,11 +724,27 @@ struct SettingsView: View {
                 
                 // 設定パネル
                 VStack(spacing: 25) {
-                    // ヘッダー
+                    // ヘッダー（隠し機能のタップエリア）
                     HStack {
                         Text("設定")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
+                            .onTapGesture {
+                                secretTapCount += 1
+                                if secretTapCount >= 10 {
+                                    withAnimation(.spring()) {
+                                        showSecretFeature = true
+                                    }
+                                    secretTapCount = 0
+                                }
+                                
+                                // 3秒後にカウントをリセット
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                    if secretTapCount > 0 && secretTapCount < 10 {
+                                        secretTapCount = 0
+                                    }
+                                }
+                            }
                         
                         Spacer()
                         
@@ -731,28 +763,89 @@ struct SettingsView: View {
                     
                     // 設定項目
                     VStack(spacing: 20) {
-                        // シャッター音設定
-                        HStack {
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("シャッター音")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                        // 隠し機能：シャッター音設定（7回タップで表示）
+                        if showSecretFeature {
+                            VStack(spacing: 15) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        HStack {
+                                            Text("🔇 サイレントモード")
+                                                .font(.system(size: 18, weight: .semibold))
+                                                .foregroundColor(.orange)
+                                            
+                                            Text("(隠し機能)")
+                                                .font(.system(size: 12, weight: .medium))
+                                                .foregroundColor(.gray)
+                                            
+                                            Spacer()
+                                            
+                                            Button(action: {
+                                                withAnimation(.spring()) {
+                                                    showSecretFeature = false
+                                                    shutterSoundEnabled = true // 隠し機能を閉じる時は音をオンに戻す
+                                                    isHidden = false // Hideモードも解除
+                                                }
+                                            }) {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .font(.system(size: 16))
+                                                    .foregroundColor(.gray)
+                                            }
+                                        }
+                                        
+                                        Text("開発者向け機能です")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Toggle("", isOn: $shutterSoundEnabled)
+                                        .toggleStyle(CustomToggleStyle())
+                                }
+                                .padding(.horizontal, 25)
                                 
-                                Text("オフにすると無音で撮影できます（デフォルト：オン）")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
+                                // 隠し機能の警告
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundColor(.red)
+                                            .font(.system(size: 16))
+                                        
+                                        Text("開発者向け機能")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.red)
+                                        
+                                        Spacer()
+                                    }
+                                    
+                                    Text("• この機能は開発・テスト目的でのみ使用してください")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.gray)
+                                        .multilineTextAlignment(.leading)
+                                    
+                                    Text("• サイレントモードとHideボタンが利用可能になります")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.gray)
+                                        .multilineTextAlignment(.leading)
+                                    
+                                    Text("• 商用利用や一般ユーザーでの使用は推奨されません")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.gray)
+                                        .multilineTextAlignment(.leading)
+                                }
+                                .padding(.horizontal, 25)
+                                .padding(.vertical, 15)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.red.opacity(0.1))
+                                )
+                                .padding(.horizontal, 25)
                             }
                             
-                            Spacer()
-                            
-                            Toggle("", isOn: $shutterSoundEnabled)
-                                .toggleStyle(CustomToggleStyle())
+                            Divider()
+                                .background(Color.white.opacity(0.2))
+                                .padding(.horizontal, 25)
                         }
-                        .padding(.horizontal, 25)
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.2))
-                            .padding(.horizontal, 25)
                         
                         // グリッドライン設定
                         HStack {
@@ -843,17 +936,17 @@ struct SettingsView: View {
                                 Spacer()
                             }
                             
-                            Text("• アプリはデフォルトでシャッター音が鳴るように設定されています")
+                            Text("• このアプリは常にシャッター音が鳴るように設計されています")
                                 .font(.system(size: 13))
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.leading)
                             
-                            Text("• 無音撮影は適切な場所でのみ使用し、プライバシーを尊重してください")
+                            Text("• プライバシーを尊重し、適切な場所でのみ撮影してください")
                                 .font(.system(size: 13))
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.leading)
                             
-                            Text("• 一部の地域では法的要件により、設定に関わらず音が鳴る場合があります")
+                            Text("• 高解像度での撮影は多くのストレージ容量を使用します")
                                 .font(.system(size: 13))
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.leading)
@@ -1086,7 +1179,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         if let resolution = photoResolution?.wrappedValue {
             captureSession.sessionPreset = resolution.preset
         } else {
-            captureSession.sessionPreset = .high
+        captureSession.sessionPreset = .high
         }
 
         guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
